@@ -18,6 +18,7 @@ import com.example.demo.persistence.entity.JpaUser;
 import com.example.demo.persistence.repository.JpaItemBidRepository;
 import com.example.demo.persistence.repository.JpaItemRepository;
 import com.example.demo.persistence.repository.JpaUserRepository;
+import com.example.demo.service.EmailService;
 import com.example.demo.service.ItemService;
 import com.example.demo.utils.CoreBase;
 import lombok.AllArgsConstructor;
@@ -41,6 +42,7 @@ public class ItemServiceImpl implements ItemService {
     private final JpaUserRepository jpaUserRepository;
     private final JpaItemBidRepository jpaItemBidRepository;
     private final ItemMapper itemMapper;
+    private final EmailService emailService;
 
     @Override
     public Result<Object> list(AdminListItemRequest request) {
@@ -156,6 +158,7 @@ public class ItemServiceImpl implements ItemService {
     public void updateWinner() {
         List<JpaItem> items = jpaItemRepository.findAllByEndTimeBeforeAndFinished(LocalDateTime.now(), ItemEnum.NOT_FINISHED);
         List<JpaItemBid> itemBids = jpaItemBidRepository.findAllByItemIdIn(items.stream().map(JpaItem::getId).collect(Collectors.toList()));
+        List<JpaUser> users = jpaUserRepository.findAllById(itemBids.stream().map(JpaItemBid::getId).collect(Collectors.toList()));
         items.forEach(item -> {
             item.setFinished(ItemEnum.FINISHED);
             List<JpaItemBid> currentItemBid = itemBids.stream().filter(itemBid -> itemBid.getItemId().equals(item.getId())).collect(Collectors.toList());
@@ -170,6 +173,11 @@ public class ItemServiceImpl implements ItemService {
                 }).collect(Collectors.toList());
                 jpaItemBidRepository.save(highestBid);
                 jpaItemBidRepository.saveAll(remainingBids);
+                var winner = users.stream().filter(user -> user.getId().equals(highestBid.getUserId())).findFirst().orElse(null);
+                if (winner != null)
+                {
+                    emailService.sendMail(winner.getEmail(), item.getName());
+                }
             }
             jpaItemRepository.save(item);
         });

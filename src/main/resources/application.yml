@@ -25,6 +25,21 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
 
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        auth: true
+      starttls:
+        enable: true
+
+  freemarker:
+    template-loader-path: classpath:/templates/
+    suffix: .ftl
+
   security:
     oauth2:
       client:
@@ -40,6 +55,7 @@ spring:
 
 
 app:
+  sample-user-social-token: ${SAMPLE_USER_SOCIAL_TOKEN}
   secret-key: ${SECRET_KEY}
   issuer: ${ISSUER}
 
